@@ -1,0 +1,35 @@
+name: LGTM.md
+
+on:
+  schedule:
+    - cron: "30 0 * * *"        # nightly, shortly after midnight UTC
+  workflow_dispatch:            # manual runs from the Actions tab
+  push:
+    paths: [.github/workflows/lgtm-md.yml]
+
+permissions:
+  contents: write
+
+concurrency: lgtm-md
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eliorpom-cmd/lgtm.md@v1.2.0
+        with:
+          # Falls back to the default token (public activity only) if the secret isn't set.
+          token: ${{ secrets.LGTM_MD_TOKEN || github.token }}
+          widgets: |
+            grass
+            flame
+            departures
+      - name: Commit changed widgets
+        run: |
+          git add widgets
+          git diff --cached --quiet && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "widgets: redraw"
+          git push
